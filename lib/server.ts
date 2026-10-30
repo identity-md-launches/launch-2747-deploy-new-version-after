@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { cookies } from 'next/headers';
+import type { WheelEvent } from './game';
 export function database() {
   if (!env.DB) throw new Error('Leaderboard storage is unavailable. Practice mode still works.');
   return env.DB;
@@ -26,7 +27,7 @@ export async function body(req: Request) {
   return JSON.parse(raw);
 }
 export type Pulse = { available: boolean; rpm: number | null; height: string | null; source: string;
-  receivedAt: string | null; state: string; seed: number; transaction: string | null };
+  receivedAt: string | null; state: string; seed: number; transaction: string | null; event?: WheelEvent | null };
 let cached: { until: number; data: Pulse } | null = null;
 export async function pulse(): Promise<Pulse> {
   if (cached && cached.until > Date.now()) return cached.data;

@@ -1,16 +1,30 @@
 import { isAddress, verifyMessage } from 'viem';
 import { cookies } from 'next/headers';
 import { body, database, digest, identity, json, pulse, sameOrigin } from '@/lib/server';
-import { createGame, replayChunk, verifyRunTiming, type Game } from '@/lib/game';
+import { createGame, replayChunk, verifyRunTiming, type Game, type BoostConfig } from '@/lib/game';
+import { findEvent, latestEvent, observeWheel } from '@/lib/events';
 export const dynamic = 'force-dynamic';
 const endpoint = (r: Request) => new URL(r.url).pathname.replace(/^\/api\//, '');
 export async function GET(req: Request) {
   try {
     const path = endpoint(req);
-    if (path === 'pulse') return json(await pulse());
+    if (path === 'pulse') {
+      const live = await pulse();
+      return json({ ...live, event: await observeWheel(database(), live), serverNow: Date.now() });
+    }
     if (path === 'auth/session') return json({ address: await identity() });
     if (path === 'leaderboard') {
       const db = database(), address = await identity();
+      const eventId = new URL(req.url).searchParams.get('event');
+      if (eventId) {
+        if (eventId.length > 64) return json({ error: 'Invalid event.' }, 400);
+        const event = eventId === 'latest' ? await latestEvent(db) : await findEvent(db, eventId);
+        if (!event) return json({ rows: [], total: 0, me: null, event: null });
+        const top = await db.prepare('SELECT address,score,catches,orbits,played FROM event_records WHERE event_id = ? ORDER BY score DESC,updated ASC,address ASC LIMIT 20').bind(event.id).all();
+        const count = await db.prepare('SELECT COUNT(*) AS n FROM event_records WHERE event_id = ?').bind(event.id).first<{ n: number }>();
+        const me = address ? await db.prepare('SELECT address,score,catches,orbits,played FROM event_records WHERE event_id = ? AND address = ?').bind(event.id, address).first() : null;
+        return json({ rows: top.results, total: count?.n || 0, me, event });
+      }
       const top = await db.prepare('SELECT address,score,catches,played FROM records ORDER BY score DESC,updated ASC,address ASC LIMIT 20').all();
       const count = await db.prepare('SELECT COUNT(*) AS n FROM records').first<{n: number}>();
       const me = address ? await db.prepare('SELECT address,score,catches,played FROM records WHERE address = ?').bind(address).first() : null;
@@ -63,24 +77,38 @@ export async function POST(req: Request) {
     if (path !== 'runs') return json({ error: 'Not found.' }, 404);
     const address = await identity();
     if (!address) return json({ error: 'Sign in with your wallet to play a ranked run.' }, 401);
+    if (data.action === 'abandon') {
+      if (typeof data.id !== 'string' || data.id.length > 64) return json({ error: 'Invalid run.' }, 400);
+      await db.prepare('UPDATE runs SET consumed = 1 WHERE id = ? AND address = ? AND consumed = 0').bind(data.id, address).run();
+      return json({ ok: true });
+    }
     if (data.action === 'start') {
+      if (data.mode !== undefined && data.mode !== 'arcade' && data.mode !== 'boost') return json({ error: 'Unknown game mode.' }, 400);
       const recent = await db.prepare('SELECT COUNT(*) AS n FROM runs WHERE address = ? AND started > ?').bind(address, now - 60000).first<{n: number}>();
       if ((recent?.n || 0) >= 4) return json({ error: 'Take a breather. Your next ranked run opens in a minute.' }, 429);
-      const live = await pulse();
-      if (!live.available) return json({ error: 'The live feed is stale or offline. Practice is available; ranked runs resume with fresh data.' }, 503);
       const id = crypto.randomUUID();
-      // Salt the live block with fresh server entropy. A practiced or copied replay
-      // cannot be carried into a new ranked run, even within the same Squeek block.
-      const seed = parseInt((await digest(`${live.seed}:${id}:${address}`)).slice(0,8),16);
+      let seed: number, source: string, boost: BoostConfig | undefined, sourceHeight: string | null = null;
+      if (data.mode === 'boost') {
+        const event = typeof data.eventId === 'string' ? await findEvent(db, data.eventId) : null;
+        const joining = Date.now();
+        if (!event || joining < event.openedAt || joining >= event.joinUntil) return json({ error: 'This Boost has closed. Try a practice Boost or wait for the next run.' }, 409);
+        seed = event.seed; boost = { rpm: event.rpm, eventId: event.id }; source = JSON.stringify({ event });
+      } else {
+        const live = await pulse();
+        if (!live.available) return json({ error: 'The live feed is stale or offline. Practice is available; ranked runs resume with fresh data.' }, 503);
+        // Ordinary runs retain a fresh private course; Boost deliberately shares
+        // one frozen event course so its participants face the same challenge.
+        seed = parseInt((await digest(`${live.seed}:${id}:${address}`)).slice(0,8),16); source = JSON.stringify(live); sourceHeight = live.height;
+      }
       const started=Date.now();
       await db.batch([
         db.prepare('UPDATE runs SET consumed = 1 WHERE address = ? AND consumed = 0').bind(address),
-        db.prepare('INSERT INTO runs (id,address,seed,started,source,state,updated) VALUES (?,?,?,?,?,?,?)').bind(id, address, seed, started, JSON.stringify(live),JSON.stringify(createGame(seed)),started),
+        db.prepare('INSERT INTO runs (id,address,seed,started,source,state,updated,event_id) VALUES (?,?,?,?,?,?,?,?)').bind(id, address, seed, started, source,JSON.stringify(createGame(seed,boost)),started,boost?.eventId || null),
       ]);
-      return json({ id, seed, source: live.height });
+      return json({ id, seed, boost: boost || null, source: sourceHeight });
     }
     if (data.action !== 'checkpoint' || typeof data.id !== 'string' || !Number.isSafeInteger(data.sequence) || data.sequence<1 || typeof data.finished!=='boolean') return json({ error: 'Invalid run checkpoint.' }, 400);
-    const run = await db.prepare('SELECT * FROM runs WHERE id = ? AND address = ?').bind(data.id, address).first<{seed: number; started: number; state:string|null; checkpoint:number; updated:number; consumed:number; last_payload:string|null;score:number;catches:number}>();
+    const run = await db.prepare('SELECT * FROM runs WHERE id = ? AND address = ?').bind(data.id, address).first<{seed: number; started: number; state:string|null; checkpoint:number; updated:number; consumed:number; last_payload:string|null;score:number;catches:number;event_id:string|null}>();
     if (!run?.state) return json({ error: 'This run expired. Start a new run.' }, 400);
     const previousState=JSON.parse(run.state) as Game;
     if(run.consumed&&!previousState.ended)return json({error:'This run was replaced by a newer run.'},400);
@@ -98,12 +126,20 @@ export async function POST(req: Request) {
     }
     // D1 batch is transactional: a storage failure leaves the run retryable, and racing
     // submissions cannot increment played twice.
-    const committed = await db.batch([
-      db.prepare(`INSERT INTO records (address,score,catches,played,updated)
+    const record = run.event_id ? db.prepare(`INSERT INTO event_records (event_id,address,score,catches,orbits,played,updated)
+      SELECT event_id,address,?,?,?,1,? FROM runs WHERE id = ? AND address = ? AND consumed = 0 AND checkpoint = ?
+      ON CONFLICT(event_id,address) DO UPDATE SET catches = CASE WHEN excluded.score > event_records.score THEN excluded.catches ELSE event_records.catches END,
+      orbits = CASE WHEN excluded.score > event_records.score THEN excluded.orbits ELSE event_records.orbits END,
+      updated = CASE WHEN excluded.score > event_records.score THEN excluded.updated ELSE event_records.updated END,
+      score = MAX(event_records.score, excluded.score), played = event_records.played + 1`)
+      .bind(g.score,g.catches,g.boost?.orbits || 0,now,data.id,address,run.checkpoint)
+      : db.prepare(`INSERT INTO records (address,score,catches,played,updated)
       SELECT address,?,?,1,? FROM runs WHERE id = ? AND address = ? AND consumed = 0 AND checkpoint = ?
       ON CONFLICT(address) DO UPDATE SET catches = CASE WHEN excluded.score > records.score THEN excluded.catches ELSE records.catches END,
       updated = CASE WHEN excluded.score > records.score THEN excluded.updated ELSE records.updated END,
-      score = MAX(records.score, excluded.score), played = records.played + 1`).bind(g.score, g.catches, now, data.id, address,run.checkpoint),
+      score = MAX(records.score, excluded.score), played = records.played + 1`).bind(g.score, g.catches, now, data.id, address,run.checkpoint);
+    const committed = await db.batch([
+      record,
       db.prepare('UPDATE runs SET consumed = 1,score = ?,catches = ?,replay_hash = ?,state = ?,checkpoint = ?,updated = ?,last_payload = ? WHERE id = ? AND address = ? AND checkpoint = ? AND consumed = 0')
         .bind(g.score,g.catches,replayHash,JSON.stringify(g),data.sequence,now,payloadHash,data.id,address,run.checkpoint),
     ]);

@@ -17,6 +17,18 @@ Practice is available without a wallet. Connect an Ethereum wallet and sign a me
 
 Live courses use data from the official Squeekchain status feed. The game shows the feed's availability and offers practice mode when live data is unavailable.
 
+## Boost events
+
+A fresh hardware transition from resting to running opens a shared 90-second entry window. Each Boost lasts up to 75 seconds (or three lost hearts). The event freezes the seed and starting RPM for all participants: slow wheels produce arcs, faster wheels produce spirals. A 12-seed golden orbit appears at 12, 30, 48 and 66 seconds; catching the full sequence awards +500 points.
+
+Exit or Escape immediately returns to the arcade. Exited runs are abandoned without submitting a score. Existing seeds and glitches finish their flights before the golden sequence reaches the collector; charging never clears the field.
+
+The entry window and any started run survive a hamster rest or an unavailable feed. Continued running does not continually create events. Event detection follows visitor polling; activity entirely between observations can be missed. The hardware signal is persisted in D1 so concurrent visitors and Worker restarts share one event.
+
+Sign in before joining a live Boost to save a server-verified score to that event's leaderboard. These scores never enter the ordinary all-time board. **Practice Boost** in the Squeekchain card is a clearly labelled, always-available practice run with a separate device best; it does not simulate a hardware event or submit a score.
+
+After updating, apply the new D1 migration before serving the updated app. The local command below applies it only to the development database.
+
 ## Run locally
 
 Requires Node.js 22.13 or newer and npm.
@@ -37,6 +49,8 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+With the local dev server running, `node --experimental-strip-types tests/boost-integration.mjs` verifies a full 75-second event run against local D1 and removes its disposable account and fixtures afterward.
 
 ## About
 

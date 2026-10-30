@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import {Agent, request} from 'node:https';
 import {isIP} from 'node:net';
+import {readFile} from 'node:fs/promises';
 import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 
 const origin=new URL('https://wheelkeepers.dpdns.org');
@@ -33,19 +34,27 @@ function call(path,{method='GET',data,headers={}}={}){
 try{
   const home=await call('/');assert.equal(home.status,200);
   assert.match(home.text,/Wheelkeepers/);assert.doesNotMatch(home.text,/@vite\/client/);
+  assert.match(home.text,/Practice Boost/);assert.match(home.text,/hamster-mark\.svg\?v=led-ears/);
+  assert.doesNotMatch(home.text,/wheelkeepers\.dev\.extension-error-filter/);
+  const logo=await call('/hamster-mark.svg?v=led-ears');assert.equal(logo.status,200);
+  assert.match(logo.headers['content-type'],/image\/svg\+xml/);
+  assert.equal(logo.text,await readFile(new URL('../public/hamster-mark.svg',import.meta.url),'utf8'));
   for(const pattern of [/<script[^>]+src="([^"]+)"/,/href="([^"]+\.css[^"]*)"/]){
     const asset=home.text.match(pattern)?.[1];assert.ok(asset?.startsWith('/'));
     assert.equal((await call(asset)).status,200);
   }
   const pulse=await call('/api/pulse');assert.equal(pulse.status,200);
   assert.equal(typeof pulse.json.available,'boolean');
+  assert.ok(Object.hasOwn(pulse.json,'event'));
+  const eventBoard=await call('/api/leaderboard?event=latest');assert.equal(eventBoard.status,200);
+  assert.ok(Array.isArray(eventBoard.json.rows));assert.ok(Object.hasOwn(eventBoard.json,'event'));
   const before=await call('/api/leaderboard');assert.equal(before.status,200);
   assert.ok(Array.isArray(before.json.rows));
   assert.equal((await call('/api/auth/session')).json.address,null);
   assert.equal((await call('/api/runs',{method:'POST',data:{action:'start'}})).status,401);
   const cross=await call('/api/auth/nonce',{method:'POST',data:{address:wallet.address},headers:{origin:'https://foreign.invalid'}});
   assert.equal(cross.status,400);
-  console.log('PASS: HTTPS, static HTML/JS/CSS, live feed, leaderboard, guest and origin protection');
+  console.log('PASS: HTTPS, latest UI and LED logo, HTML/JS/CSS, live feed, event board, guest and origin protection');
 
   const nonce=await call('/api/auth/nonce',{method:'POST',data:{address:wallet.address}});
   assert.equal(nonce.status,200,nonce.text);assert.ok(nonce.json.message.startsWith(origin.host));

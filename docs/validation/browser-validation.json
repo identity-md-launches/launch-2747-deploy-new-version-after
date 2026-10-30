@@ -1,0 +1,186 @@
+{
+  "export": "dist",
+  "checks": [
+    {
+      "name": "chromium: responsive export",
+      "passed": true,
+      "details": "No horizontal overflow at 320, 390, 768, 940, 1120 and 1440; product and Play visible at 390 × 844."
+    },
+    {
+      "name": "chromium: subpath assets and metadata",
+      "passed": true,
+      "details": "Export served under /preview/; local fonts loaded; no remote resource requests."
+    },
+    {
+      "name": "chromium instructions: axe accessibility scan",
+      "passed": true,
+      "details": "31 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "chromium wallet sheet: axe accessibility scan",
+      "passed": true,
+      "details": "30 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "chromium ready: axe accessibility scan",
+      "passed": true,
+      "details": "43 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "chromium: reduced motion",
+      "passed": true,
+      "details": "Idle canvas frames are identical and no endless CSS animation remains."
+    },
+    {
+      "name": "chromium: native touch drag",
+      "passed": true,
+      "details": "Touch start/move/end moves the rendered aim marker to the requested angle."
+    },
+    {
+      "name": "chromium: real controls and dialogs",
+      "passed": true,
+      "details": "Keyboard Play, arrow steering, touch tap, Escape exit, sound toggle, Practice Boost, board tabs, focus trap/return; no script or resource failures."
+    },
+    {
+      "name": "chromium populated leaderboard: axe accessibility scan",
+      "passed": true,
+      "details": "44 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "chromium: wallet and verified completion (fixtures)",
+      "passed": true,
+      "details": "3 checkpoints independently replayed; rejection/retry, site-bound sign-in, bearer game requests, final score and shared-board refresh. No production writes."
+    },
+    {
+      "name": "chromium: device persistence and Boost separation",
+      "passed": true,
+      "details": "Guest completion persists best across reload; Practice Boost updates its own best and sends no ranked start request."
+    },
+    {
+      "name": "chromium: service failure recovery",
+      "passed": true,
+      "details": "Failed API requests show Scores unavailable and Retry; practice still starts and exits. Network failures are deliberately induced."
+    },
+    {
+      "name": "chromium: blocked storage",
+      "passed": true,
+      "details": "A completed practice run shows that the best lasts only for this page session."
+    },
+    {
+      "name": "webkit: responsive export",
+      "passed": true,
+      "details": "No horizontal overflow at 320, 390, 768, 940, 1120 and 1440; product and Play visible at 390 × 844."
+    },
+    {
+      "name": "webkit: subpath assets and metadata",
+      "passed": true,
+      "details": "Export served under /preview/; local fonts loaded; no remote resource requests."
+    },
+    {
+      "name": "webkit instructions: axe accessibility scan",
+      "passed": true,
+      "details": "31 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "webkit wallet sheet: axe accessibility scan",
+      "passed": true,
+      "details": "30 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "webkit ready: axe accessibility scan",
+      "passed": true,
+      "details": "43 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "webkit: reduced motion",
+      "passed": true,
+      "details": "Idle canvas frames are identical and no endless CSS animation remains."
+    },
+    {
+      "name": "webkit: real controls and dialogs",
+      "passed": true,
+      "details": "Keyboard Play, arrow steering, touch tap, Escape exit, sound toggle, Practice Boost, board tabs, focus trap/return; no script or resource failures."
+    },
+    {
+      "name": "webkit populated leaderboard: axe accessibility scan",
+      "passed": true,
+      "details": "44 rules passed; no violations. This is not a screen-reader test."
+    },
+    {
+      "name": "webkit: wallet and verified completion (fixtures)",
+      "passed": true,
+      "details": "8 checkpoints independently replayed; rejection/retry, site-bound sign-in, bearer game requests, final score and shared-board refresh. No production writes."
+    },
+    {
+      "name": "webkit: device persistence and Boost separation",
+      "passed": true,
+      "details": "Guest completion persists best across reload; Practice Boost updates its own best and sends no ranked start request."
+    },
+    {
+      "name": "webkit: service failure recovery",
+      "passed": true,
+      "details": "Failed API requests show Scores unavailable and Retry; practice still starts and exits. Network failures are deliberately induced."
+    },
+    {
+      "name": "webkit: blocked storage",
+      "passed": true,
+      "details": "A completed practice run shows that the best lasts only for this page session."
+    },
+    {
+      "name": "live production API: read-only browser check",
+      "passed": true,
+      "details": [
+        {
+          "url": "https://wheelkeepers.dpdns.org/api/auth/session",
+          "status": 200
+        },
+        {
+          "url": "https://wheelkeepers.dpdns.org/api/leaderboard",
+          "status": 200
+        },
+        {
+          "url": "https://wheelkeepers.dpdns.org/api/pulse",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "engines": [
+    "chromium",
+    "webkit"
+  ],
+  "limitations": [
+    "No real wallet, passkey wallet, physical phone, screen reader, native browser zoom, or production score submission was exercised. Real API requests were read-only. Wallet signatures and score writes were browser fixtures."
+  ],
+  "screenshots": [
+    "chromium-390.png",
+    "chromium-1440.png",
+    "webkit-390.png",
+    "webkit-1440.png"
+  ],
+  "mobile390": {
+    "width": 390,
+    "scroll": 390,
+    "play": {
+      "x": 29,
+      "y": 529.921875,
+      "width": 78.8125,
+      "height": 48,
+      "top": 529.921875,
+      "right": 107.8125,
+      "bottom": 577.921875,
+      "left": 29
+    },
+    "wheel": {
+      "x": 13,
+      "y": 339.953125,
+      "width": 364,
+      "height": 320,
+      "top": 339.953125,
+      "right": 377,
+      "bottom": 659.953125,
+      "left": 13
+    }
+  },
+  "passed": true
+}

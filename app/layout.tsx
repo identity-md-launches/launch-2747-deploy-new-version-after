@@ -3,11 +3,17 @@ import "./globals.css";
 import { extensionErrorPrelude } from "@/scripts/dev-extension-errors.mjs";
 
 export const metadata: Metadata = {
-  title: "Wheelkeepers — A little hamster. A big high score.",
-  description: "Catch seeds. Dodge glitches. Keep the wheel alive. A free Squeekchain arcade with gasless wallet sign-in and a shared leaderboard.",
+  title: "Wheelkeepers | Keep the wheel alive",
+  description: "A Squeekchain arcade powered by a real hamster. Catch seeds, dodge glitches and play free. Live Boost events and a shared leaderboard.",
   icons: {
-    icon: "/hamster-mark.svg?v=led-ears",
-    shortcut: "/hamster-mark.svg?v=led-ears",
+    icon: "./hamster-mark.svg",
+    shortcut: "./hamster-mark.svg",
+  },
+  openGraph: {
+    title: "Wheelkeepers | Keep the wheel alive",
+    description: "A real hamster. A shared high score. Play the free Squeekchain arcade.",
+    images: [{ url: "./share.png", width: 1200, height: 630, alt: "Wheelkeepers hamster wheel arcade" }],
+    type: "website",
   },
 };
 

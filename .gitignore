@@ -1,0 +1,100 @@
+# Dependencies
+/node_modules/
+/.pnp
+.pnp.*
+# Keep authored Yarn tooling if the project adopts Yarn.
+/.yarn/*
+!/.yarn/patches/
+!/.yarn/plugins/
+!/.yarn/releases/
+!/.yarn/versions/
+
+# Generated builds and framework state
+/dist/
+/.next/
+/.vinext/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test output
+/coverage/
+/test-results/
+/playwright-report/
+
+# Package-manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+/logs/
+
+# Local environment and keys
+.env*
+.dev.vars*
+!.env.example
+!.env.*.example
+!.dev.vars.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+.git-credentials
+/.credentials/
+/.secrets/
+/.ssh/
+credentials*.json
+service-account*.json
+
+# Checkout-local tool state
+/.wrangler/
+/.sites-runtime/
+/.openai/
+/.cloudflare/
+/.vercel/
+/.netlify/
+
+# Workspace scaffolding and publication archives
+/.agents/
+/.codex/
+/outputs/
+/work/
+/private/
+/notes/
+/backups/
+/dumps/
+/exports/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Local databases and runtime data; keep schema migrations in drizzle/
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db-wal
+*.db-shm
+*.db-journal
+*.dump
+
+# Editor-local settings
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
